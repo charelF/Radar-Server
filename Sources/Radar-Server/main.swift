@@ -2,6 +2,7 @@ import Foundation
 import HeliumLogger
 import Kitura
 import Dispatch
+import KituraContracts
 
 //struct Song: Codable {
 //    let title: String
@@ -111,12 +112,26 @@ import Dispatch
 //var activities = testData
 
 
+public struct Query: QueryParams {
+    // protocol QueryParams is in KituraContracts, not Kitura ...
+    let username: String
+}
+
+
 public class RESTfulServer {
 
     let router = Router()
+    
+    var activities: [Activity] = []
+    
+    var users: [User] = []
 
     func initRoutes(){
         router.get("/activities", handler:getActivities)
+        router.put("/activities", handler:addActivity)
+        router.get("/user", handler:getUser)
+        
+
 //        router.get("/songs", handler:getSong)
 //        router.post("/playlists", handler: createPlaylist)
 //        router.put("/playlists", handler: updatePlaylist)
@@ -126,18 +141,38 @@ public class RESTfulServer {
     // we use a closure here: https://docs.swift.org/swift-book/LanguageGuide/Closures.html
     // completion is a closure/function that takes an optional array of activities and an optional error and returns nothing. it is called by getActivities upon completion of the code in getActivities
     func getActivities(completion:([Activity]?, RequestError?) -> Void) {
-        
-        //sleep(5) // for testing
-        // while this clearly affects a request on the web (localhost:8080/activities)
-        // it does not seem to affect the call in the app itself... Possibly
-        // ios does some kind of optimisations?...
-        
-        let activities = testData
-        
-        // no error has happended so we call with nil and the retrieved activities
-        completion(activities, nil)
+        completion(self.activities, nil)
         
     }
+    
+    func getUser(query: Query, completion:(User?, RequestError?) -> Void) {
+        
+        let result = self.users.filter { $0.username == query.username }
+        
+        switch result.count {
+        case 0:
+            // normally we should return an error, as get is not the good way to create a user
+            // however for simplicity we will just create a user
+            let user = User(username: query.username)
+            users.append(user)
+            completion(user, nil)
+        case 1: completion(result[0], nil)
+        default: completion(nil, .conflict) // in case there are more users with same name
+        }
+    }
+    
+    
+    func addActivity(id: String, activity:Activity, completion:(Activity?, RequestError?) -> Void) {
+        if self.activities.contains(activity) {
+            // put should be idempotent, so dont return an error
+            return completion(activity, nil)
+        } else {
+            self.activities.append(activity)
+            return completion(activity, nil)
+        }
+    }
+    
+    
 //
 //    func getSongs(completion:([Song]?,RequestError?) -> Void) {
 //
