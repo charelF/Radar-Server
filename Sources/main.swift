@@ -13,13 +13,13 @@ public class RESTfulServer {
     func initRoutes(){
         
         // GET a single activity via its id
-        router.get("/activity", handler:getActivity)
+        router.get("/activities", handler:getActivity)
         
         // GET all activities
-        router.get("/activity", handler:getActivities)
+        router.get("/activities", handler:getActivities)
         
         // PUT (update/create) a single activity via its id
-        router.put("/activity", handler:putActivity)
+        router.put("/activities", handler:putActivity)
     }
     
     func getActivities(completion:([Activity]?, RequestError?) -> Void) {
